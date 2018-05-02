@@ -1,4 +1,4 @@
-"""Throttling TCO client script (see 'ThrottlingClient' class for mote information)
+"""Throttling TCP client script (see 'ThrottlingClient' class for mote information)
 
 Send up to 1 requests per second:
 python3.6 client.py 1
