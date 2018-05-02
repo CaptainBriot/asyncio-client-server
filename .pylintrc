@@ -1,0 +1,21 @@
+[REPORTS]
+msg-template={path}:{line} -> {msg} [{msg_id}({symbol})]
+
+[BASIC]
+include-naming-hint=yes
+good-names=i,j,k,ex,Run,ip,id,fd,os,_
+const-rgx=(([A-Z_][A-Z0-9_]{2,30}$)|([a-z_][a-z0-9_]{2,30}$)|([A-Z_][a-zA-Z0-9]{2,30}$)|(__.*__))$
+const-name-hint=(([A-Z_][A-Z0-9_]{2,30}$)|([a-z_][a-z0-9_]{2,30}$)|([A-Z_][a-zA-Z0-9]{2,30}$)|(__.*__))$
+
+[FORMAT]
+max-line-length=120
+
+[VARIABLES]
+init-import=yes
+
+[DESIGN]
+min-public-methods=0
+max-args=8
+max-attributes=10
+max-returns=4
+max-locals=10

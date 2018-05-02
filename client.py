@@ -15,8 +15,9 @@ python3.6 client.py N
 import asyncio
 import logging
 import argparse
-import sys
 import itertools
+
+import common
 
 LOGGER = logging.getLogger(__name__)
 
@@ -61,13 +62,6 @@ class ThrottlingClient:
         writer.close()
 
 
-def init_logging():
-    logging.root.setLevel(logging.DEBUG)
-    stdout_handler = logging.StreamHandler(sys.stdout)
-    stdout_handler.setLevel(logging.DEBUG)
-    logging.root.addHandler(stdout_handler)
-
-
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('frequency', type=float)
@@ -75,7 +69,7 @@ def parse_args():
 
 
 def main():
-    init_logging()
+    common.init_logging()
     options = parse_args()
     ThrottlingClient('127.0.0.1', 8888, options.frequency)
     asyncio.get_event_loop().run_forever()

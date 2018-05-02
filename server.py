@@ -6,7 +6,8 @@ python3.6 server.py
 import asyncio
 import uuid
 import logging
-import sys
+
+import common
 
 LOGGER = logging.getLogger(__name__)
 
@@ -49,15 +50,8 @@ class TrackerServer:
             await asyncio.sleep(interval)
 
 
-def init_logging():
-    logging.root.setLevel(logging.DEBUG)
-    stdout_handler = logging.StreamHandler(sys.stdout)
-    stdout_handler.setLevel(logging.DEBUG)
-    logging.root.addHandler(stdout_handler)
-
-
 def main():
-    init_logging()
+    common.init_logging()
     TrackerServer('127.0.0.1', 8888)
     asyncio.get_event_loop().run_forever()
     asyncio.get_event_loop().close()
