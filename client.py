@@ -39,9 +39,8 @@ class ThrottlingClient:
         self.port = port
         self.interval = 1 / frequency
         self.counter = itertools.count()
-        asyncio.ensure_future(self.make_requests())
 
-    async def make_requests(self):
+    async def start(self):
         """Make (schedule) requests.
 
         Note: This is not as accurate as expected. One reason is because of the overhead when creating the coroutine.
@@ -50,19 +49,24 @@ class ThrottlingClient:
               when the frequency is 200 the average send frequency is 166
         """
         while True:
-            asyncio.ensure_future(self.send_request())
+            asyncio.ensure_future(self.send_request())  # ensure_future is faster than await in this case.
             await asyncio.sleep(self.interval)
 
     async def send_request(self):
         """Send one request."""
-        reader, writer = await asyncio.open_connection(self.host, self.port)
+        try:
+            reader, writer = await asyncio.open_connection(self.host, self.port)
+        except ConnectionError as ex:
+            LOGGER.error(ex)
+            return
+
         counter = str(next(self.counter))
         LOGGER.info('%s: sending request to server', counter)
         writer.write(counter.encode())
         writer.close()
 
 
-def parse_args():
+def parse_args():  # pragma: no cover
     parser = argparse.ArgumentParser()
     parser.add_argument('frequency', type=float)
     return parser.parse_args()
@@ -71,8 +75,8 @@ def parse_args():
 def main():
     common.init_logging()
     options = parse_args()
-    ThrottlingClient('127.0.0.1', 8888, options.frequency)
-    asyncio.get_event_loop().run_forever()
+    client = ThrottlingClient('127.0.0.1', 8888, options.frequency)
+    asyncio.get_event_loop().run_until_complete(client.start())
     asyncio.get_event_loop().close()
 
 

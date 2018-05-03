@@ -23,9 +23,13 @@ class TrackerServer:
             host: the host address to listen on.
             port: the port to listen on.
         """
+        self.host = host
+        self.port = port
         self.requests = set()
         self.frequency = 1
-        asyncio.ensure_future(asyncio.start_server(self.handle_request, host, port))
+
+    def start(self):
+        asyncio.ensure_future(asyncio.start_server(self.handle_request, self.host, self.port))
         asyncio.ensure_future(self.log_numbers_requests_per_second())
 
     async def handle_request(self, *_):
@@ -52,7 +56,8 @@ class TrackerServer:
 
 def main():
     common.init_logging()
-    TrackerServer('127.0.0.1', 8888)
+    server = TrackerServer('127.0.0.1', 8888)
+    server.start()
     asyncio.get_event_loop().run_forever()
     asyncio.get_event_loop().close()
 
