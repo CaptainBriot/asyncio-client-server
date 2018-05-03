@@ -23,6 +23,8 @@ LOGGER = logging.getLogger(__name__)
 
 
 class ThrottlingClient:
+    """A TCP client that throttle requests"""
+
     def __init__(self, host, port, frequency):
         """A TCP client that throttle requests.
 
@@ -55,7 +57,7 @@ class ThrottlingClient:
     async def send_request(self):
         """Send one request."""
         try:
-            reader, writer = await asyncio.open_connection(self.host, self.port)
+            _, writer = await asyncio.open_connection(self.host, self.port)
         except ConnectionError as ex:
             LOGGER.error(ex)
             return
@@ -67,12 +69,18 @@ class ThrottlingClient:
 
 
 def parse_args():  # pragma: no cover
+    """Parse command lin arguments.
+
+    Returns:
+        the command line options.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument('frequency', type=float)
     return parser.parse_args()
 
 
 def main():
+    """Main entry point."""
     common.init_logging()
     options = parse_args()
     client = ThrottlingClient('127.0.0.1', 8888, options.frequency)

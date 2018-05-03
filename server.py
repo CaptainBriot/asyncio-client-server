@@ -13,6 +13,8 @@ LOGGER = logging.getLogger(__name__)
 
 
 class TrackerServer:
+    """A TCP server that keeps track of how many requests are made per second."""
+
     def __init__(self, host, port):
         """A TCP server that keeps track of how many requests are made per second.
 
@@ -29,6 +31,7 @@ class TrackerServer:
         self.frequency = 1
 
     def start(self):
+        """Start the server by scheduling coroutines with the asyncio event loop."""
         asyncio.ensure_future(asyncio.start_server(self.handle_request, self.host, self.port))
         asyncio.ensure_future(self.log_numbers_requests_per_second())
 
@@ -41,7 +44,7 @@ class TrackerServer:
         """
         uid = uuid.uuid4()
         self.requests.add(uid)
-        asyncio.get_event_loop().call_later(self.frequency, lambda x: self.requests.remove(x), uid)
+        asyncio.get_event_loop().call_later(self.frequency, self.requests.remove, uid)
 
     async def log_numbers_requests_per_second(self, interval=0.5):
         """Log the current number of requests made per second.
@@ -55,6 +58,7 @@ class TrackerServer:
 
 
 def main():
+    """Main entry point."""
     common.init_logging()
     server = TrackerServer('127.0.0.1', 8888)
     server.start()
