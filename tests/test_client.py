@@ -10,7 +10,13 @@ class TestMain(unittest.TestCase):
     @unittest.mock.patch('client.parse_args')
     @unittest.mock.patch('common.init_logging')
     def test_cli(self, mock_init_logging, mock_parse_args, mock_get_event_loop):
+        class Options:
+            period = 10
+
+        mock_parse_args.return_value = Options()
+
         client.main()
+
         self.assertIsNone(mock_init_logging.assert_called_once())
         self.assertIsNone(mock_parse_args.assert_called_once())
         self.assertEqual(len(mock_get_event_loop.mock_calls), 4)
@@ -47,3 +53,37 @@ class TestBasicRateLimitingProtocol(asynctest.TestCase):
                 asyncio.get_event_loop().run_until_complete(self.protocol.start())
             print(mock_ensure_future.mock_calls)
             self.assertEqual(len(mock_ensure_future.mock_calls), 3)
+            self.assertEqual(self.callback.mock_calls, [unittest.mock.call(), unittest.mock.call()])
+
+
+class TestTokenBucketRateLimitingProtocol(asynctest.TestCase):
+    def setUp(self):
+        self.callback = unittest.mock.MagicMock()
+        self.protocol = client.TokenBucketRateLimitingProtocol(self.callback, 10)
+
+    def test_init(self):
+        self.assertEqual(self.protocol.max_tokens, 10)
+        protocol = client.TokenBucketRateLimitingProtocol(self.callback, 0.5)
+        self.assertEqual(protocol.max_tokens, 1)
+
+    def test_add_new_tokens(self):
+        self.protocol.updated_at = 0
+        self.assertEqual(self.protocol.tokens, 0)
+        self.protocol.add_new_tokens()
+        self.assertEqual(self.protocol.tokens, 10)
+
+    async def test_wait(self):
+        self.protocol.updated_at = 0
+        self.assertEqual(self.protocol.tokens, 0)
+        await self.protocol.wait()
+        self.assertEqual(self.protocol.tokens, 9)
+
+    def test_start(self):
+        new = asynctest.mock.MagicMock(side_effect=[None, ValueError])
+        self.protocol.tokens = 10
+        with asynctest.mock.patch('asyncio.ensure_future', new=new) as mock_ensure_future:
+            with self.assertRaises(ValueError):
+                asyncio.get_event_loop().run_until_complete(self.protocol.start())
+            print(mock_ensure_future.mock_calls)
+            self.assertEqual(len(mock_ensure_future.mock_calls), 3)
+            self.assertEqual(self.callback.mock_calls, [unittest.mock.call(), unittest.mock.call()])

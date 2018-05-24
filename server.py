@@ -28,7 +28,7 @@ class TrackerServer:
         self.host = host
         self.port = port
         self.requests = set()
-        self.frequency = 1
+        self.period = 1
 
     def start(self):
         """Start the server by scheduling coroutines with the asyncio event loop."""
@@ -44,9 +44,9 @@ class TrackerServer:
         """
         uid = uuid.uuid4()
         self.requests.add(uid)
-        asyncio.get_event_loop().call_later(self.frequency, self.requests.remove, uid)
+        asyncio.get_event_loop().call_later(self.period, self.requests.remove, uid)
 
-    async def log_numbers_requests_per_second(self, interval=0.5):
+    async def log_numbers_requests_per_second(self, interval=0.1):
         """Log the current number of requests made per second.
 
         Args:
