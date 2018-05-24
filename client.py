@@ -22,25 +22,22 @@ import common
 LOGGER = logging.getLogger(__name__)
 
 
-class ThrottlingClient:
-    """A TCP client that throttle requests"""
+class BasicRateLimitingProtocol:
+    """A basic rate limiting protocol.
 
-    def __init__(self, host, port, frequency):
-        """A TCP client that throttle requests.
-
-        Note: see 'make_requests' function for more information about the send rate (frequency).
-              This class will ensure that the maximum number of requests per second is 'frequency' but in practice will
-              be somewhat lower than this theoretical maximum.
+    Note: see 'start' function for more information about the send rate (frequency).
+              This class will ensure that the maximum number of requests per second tends to 'frequency' and in practice
+              will be lower than this limit.
+    """
+    def __init__(self, callback, frequency):
+        """A basic rate limiting protocol.
 
         Args:
-            host: the host address to connect to.
-            port: the port to connect to.
-            frequency: how many requests should be sent per second? (see 'make_requests' function for more information).
+            callback: the callback to call at given frequency per second.
+            frequency: how many requests should be sent per second?
         """
-        self.host = host
-        self.port = port
+        self.callback = callback
         self.interval = 1 / frequency
-        self.counter = itertools.count()
 
     async def start(self):
         """Make (schedule) requests.
@@ -51,10 +48,28 @@ class ThrottlingClient:
               when the frequency is 200 the average send frequency is 166
         """
         while True:
-            asyncio.ensure_future(self.send_request())  # ensure_future is faster than await in this case.
+            asyncio.ensure_future(self.callback())  # ensure_future is faster than await in this case.
             await asyncio.sleep(self.interval)
 
-    async def send_request(self):
+
+class ThrottlingClient:
+    """A TCP client that throttle requests"""
+
+    def __init__(self, host, port, frequency, protocol=BasicRateLimitingProtocol):
+        """A TCP client that throttle requests.
+
+        Args:
+            host: the host address to connect to.
+            port: the port to connect to.
+            frequency: how many requests should be sent per second?
+        """
+        self.host = host
+        self.port = port
+        self.counter = itertools.count()
+        self.protocol = protocol(self.send, frequency)
+        self.start = self.protocol.start
+
+    async def send(self):
         """Send one request."""
         try:
             _, writer = await asyncio.open_connection(self.host, self.port)
